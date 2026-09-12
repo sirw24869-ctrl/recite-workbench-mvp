@@ -1,0 +1,1454 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>工作台 MVP</title>
+  <style>
+    :root {
+      --bg: #f7f8f6;
+      --panel: #ffffff;
+      --text: #151817;
+      --muted: #68706c;
+      --line: #dfe5e1;
+      --soft: #eef3f0;
+      --green: #0f766e;
+      --green-2: #e4f4ef;
+      --blue: #2563eb;
+      --amber: #b7791f;
+      --red: #b42318;
+      --shadow: 0 1px 2px rgba(17, 24, 39, .04);
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif;
+      letter-spacing: 0;
+    }
+
+    button, input, select, textarea { font: inherit; }
+    button { cursor: pointer; }
+
+    .app {
+      min-height: 100vh;
+      display: block;
+    }
+
+    .sidebar {
+      border-bottom: 1px solid var(--line);
+      background: rgba(255, 255, 255, .72);
+      backdrop-filter: blur(16px);
+      padding: 12px 28px;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 76px;
+      z-index: 20;
+      display: flex;
+      align-items: center;
+      gap: 28px;
+    }
+
+    .brand {
+      padding: 0;
+      border-bottom: 0;
+      margin-bottom: 0;
+      width: 210px;
+      flex: 0 0 auto;
+    }
+    .brand h1 {
+      margin: 0 0 6px;
+      font-size: 20px;
+      line-height: 1.2;
+    }
+    .brand p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.35;
+    }
+
+    .nav {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      flex: 1;
+      overflow-x: auto;
+    }
+
+    .nav button {
+      width: auto;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      border: 0;
+      background: transparent;
+      color: #29312d;
+      padding: 10px 12px;
+      border-radius: 8px;
+      text-align: left;
+      margin: 3px 0;
+      white-space: nowrap;
+    }
+    .nav button.active {
+      background: var(--green-2);
+      color: #064e45;
+      font-weight: 700;
+    }
+    .nav .ico {
+      width: 22px;
+      text-align: center;
+      color: var(--muted);
+    }
+
+    .main {
+      padding: 96px 42px 28px;
+      max-width: none;
+      width: 100%;
+      margin: 0;
+    }
+
+    .page { display: none; }
+    .page.active {
+      display: block;
+      min-height: calc(100vh - 162px);
+    }
+    #home.page.active {
+      height: calc(100vh - 124px);
+      min-height: 0;
+      overflow: hidden;
+    }
+
+    .page-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 24px;
+      align-items: flex-start;
+      margin-bottom: 22px;
+    }
+    .page-title h2 {
+      margin: 0 0 8px;
+      font-size: 32px;
+      line-height: 1.15;
+      font-weight: 760;
+    }
+    .page-title p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.7;
+      max-width: 780px;
+    }
+
+    .search {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 12px 14px;
+      box-shadow: var(--shadow);
+    }
+    .search input {
+      border: 0;
+      outline: 0;
+      flex: 1;
+      background: transparent;
+      color: var(--text);
+    }
+
+    .grid {
+      display: grid;
+      gap: 16px;
+    }
+    .page > .grid,
+    .page > .panel,
+    .page > .workflow-layout,
+    .page > .practice {
+      min-height: calc(100vh - 190px);
+    }
+    .grid.two { grid-template-columns: minmax(0, 1fr) 310px; }
+    .grid.three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .grid.settings { grid-template-columns: 250px minmax(0, 1fr); }
+    .home-fixed {
+      height: 100%;
+      display: grid;
+      grid-template-rows: 44px minmax(0, 1fr);
+      gap: 12px;
+      overflow: hidden;
+    }
+    .home-dashboard {
+      min-height: 0;
+      display: grid;
+      grid-template-columns: minmax(380px, 1.2fr) minmax(360px, .9fr) 300px;
+      grid-template-rows: minmax(0, 1fr) 178px;
+      gap: 12px;
+    }
+    .home-dashboard .panel {
+      min-height: 0;
+      overflow: hidden;
+    }
+    .home-span-two {
+      grid-column: span 2;
+    }
+    .compact-flow {
+      display: grid;
+      gap: 14px;
+      margin-top: 12px;
+    }
+    .compact-flow-row {
+      display: grid;
+      grid-template-columns: 150px minmax(0, 1fr) 76px;
+      gap: 12px;
+      align-items: center;
+    }
+    .compact-flow-row strong {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .home-metrics {
+      display: grid;
+      height: 100%;
+      grid-template-rows: repeat(3, 1fr);
+    }
+    .mini-table th,
+    .mini-table td {
+      padding: 9px 10px;
+    }
+    .weak-list p {
+      margin: 8px 0;
+      line-height: 1.45;
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+    }
+    .panel.pad { padding: 18px; }
+    .panel h3 {
+      margin: 0 0 12px;
+      font-size: 18px;
+    }
+    .panel p { color: var(--muted); line-height: 1.7; }
+
+    .toolbar {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+      margin: 16px 0;
+    }
+    .btn {
+      border: 1px solid var(--line);
+      background: var(--panel);
+      color: var(--text);
+      border-radius: 8px;
+      padding: 9px 13px;
+      min-height: 40px;
+    }
+    .btn.primary {
+      border-color: var(--green);
+      background: var(--green);
+      color: white;
+    }
+    .btn.ghost { background: transparent; }
+    .btn.small { padding: 6px 9px; min-height: 32px; font-size: 13px; }
+
+    .input, .select, textarea {
+      border: 1px solid var(--line);
+      background: #fff;
+      border-radius: 8px;
+      padding: 10px 12px;
+      outline: 0;
+      width: 100%;
+    }
+    textarea { min-height: 96px; resize: vertical; line-height: 1.6; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+    th, td {
+      border-bottom: 1px solid var(--line);
+      padding: 12px 10px;
+      text-align: left;
+      vertical-align: middle;
+    }
+    th {
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 650;
+      background: #fbfcfb;
+    }
+    tr:last-child td { border-bottom: 0; }
+
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border-radius: 999px;
+      padding: 4px 9px;
+      background: var(--soft);
+      color: #34403a;
+      font-size: 12px;
+      white-space: nowrap;
+    }
+    .chip.green { background: var(--green-2); color: #07594f; }
+    .chip.amber { background: #fff4d6; color: var(--amber); }
+    .chip.red { background: #ffe8e5; color: var(--red); }
+    .chip.blue { background: #eaf1ff; color: var(--blue); }
+
+    .muted { color: var(--muted); }
+    .link { color: var(--blue); border: 0; background: transparent; padding: 0; }
+
+    .flow-steps {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 8px;
+      margin-top: 14px;
+    }
+    .step {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 12px;
+      background: #fbfcfb;
+    }
+    .step strong { display: block; margin-bottom: 5px; }
+    .step small { color: var(--muted); line-height: 1.5; }
+
+    .metric {
+      padding: 14px;
+      border-bottom: 1px solid var(--line);
+    }
+    .metric:last-child { border-bottom: 0; }
+    .metric span { display: block; color: var(--muted); font-size: 13px; }
+    .metric strong { display: block; font-size: 28px; margin-top: 4px; }
+
+    .progress {
+      height: 8px;
+      background: #e8eeeb;
+      border-radius: 999px;
+      overflow: hidden;
+      margin-top: 8px;
+    }
+    .progress i {
+      display: block;
+      height: 100%;
+      background: var(--green);
+      width: var(--w, 40%);
+    }
+
+    .workflow-layout {
+      display: grid;
+      grid-template-columns: 320px minmax(0, 1fr);
+      gap: 16px;
+    }
+    .list-menu button {
+      width: 100%;
+      padding: 12px;
+      border: 0;
+      border-radius: 8px;
+      background: transparent;
+      text-align: left;
+      margin: 2px 0;
+    }
+    .list-menu button.active { background: var(--green-2); color: #064e45; font-weight: 700; }
+    .flow-list-item {
+      border: 0;
+      border-radius: 8px;
+      background: transparent;
+      padding: 12px;
+      margin: 2px 0;
+    }
+    .flow-list-item.active {
+      background: var(--green-2);
+    }
+    .flow-list-item input {
+      border: 1px solid transparent;
+      background: transparent;
+      border-radius: 6px;
+      padding: 4px 6px;
+      width: 100%;
+      color: var(--text);
+      font-weight: 650;
+    }
+    .flow-list-item input:focus {
+      background: #fff;
+      border-color: var(--line);
+      outline: 0;
+    }
+    .flow-list-meta {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 70px;
+      gap: 8px;
+      margin-top: 6px;
+      align-items: center;
+    }
+    .flow-list-meta input {
+      font-weight: 400;
+      color: var(--muted);
+    }
+
+    .timeline-wrap {
+      overflow-x: auto;
+      padding: 18px 4px 6px;
+    }
+    .workflow-timeline {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(210px, 1fr));
+      gap: 0;
+      min-width: 860px;
+    }
+    .timeline-step {
+      position: relative;
+      padding: 34px 24px 10px 0;
+    }
+    .timeline-step::before {
+      content: "";
+      position: absolute;
+      top: 14px;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: var(--line);
+    }
+    .timeline-dot {
+      position: absolute;
+      top: 6px;
+      left: 0;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: #6758f3;
+      box-shadow: 0 0 0 4px #f0efff;
+    }
+    .timeline-step h4 {
+      margin: 0 0 10px;
+      font-size: 22px;
+      line-height: 1.2;
+    }
+    .timeline-step p {
+      margin: 0;
+      color: #414a45;
+      line-height: 1.8;
+      font-size: 14px;
+    }
+    .timeline-step strong {
+      color: var(--text);
+    }
+    .timeline-step input,
+    .timeline-step textarea {
+      width: 100%;
+      border: 1px solid transparent;
+      background: transparent;
+      border-radius: 6px;
+      padding: 5px 6px;
+    }
+    .timeline-step input:focus,
+    .timeline-step textarea:focus {
+      border-color: var(--line);
+      background: #fff;
+      outline: 0;
+    }
+    .timeline-step textarea {
+      min-height: 92px;
+      resize: vertical;
+      line-height: 1.7;
+      color: #414a45;
+    }
+    .timeline-edit-row {
+      display: grid;
+      grid-template-columns: 52px minmax(0, 1fr);
+      gap: 6px;
+      align-items: center;
+      margin: 4px 0;
+      font-size: 14px;
+    }
+    .timeline-meta {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 12px;
+    }
+
+    .practice {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 340px;
+      gap: 16px;
+      align-items: start;
+    }
+    .question-card {
+      min-height: 390px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      padding: 44px;
+    }
+    .question-card h3 {
+      font-size: 30px;
+      line-height: 1.45;
+      max-width: 720px;
+    }
+    .answer {
+      border-top: 1px solid var(--line);
+      margin-top: 20px;
+      padding-top: 18px;
+      color: #2d3934;
+      line-height: 1.8;
+      display: none;
+    }
+    .rating {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 10px;
+      margin-top: 14px;
+    }
+    .rating button { min-height: 48px; }
+
+    .tabs {
+      display: flex;
+      gap: 8px;
+      border-bottom: 1px solid var(--line);
+      margin-bottom: 16px;
+    }
+    .tabs button {
+      border: 0;
+      background: transparent;
+      padding: 12px 16px;
+      color: var(--muted);
+    }
+    .tabs button.active {
+      color: var(--green);
+      border-bottom: 2px solid var(--green);
+      font-weight: 700;
+    }
+
+    .config-table input[type="text"] { padding: 7px 9px; }
+    .settings-board {
+      display: grid;
+      grid-template-columns: 260px minmax(0, 1fr);
+      gap: 16px;
+    }
+    .option-editor {
+      display: grid;
+      grid-template-columns: minmax(260px, .75fr) minmax(0, 1fr);
+      gap: 16px;
+    }
+    .option-row,
+    .rule-row,
+    .display-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 12px;
+      align-items: center;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--line);
+    }
+    .option-row:last-child,
+    .rule-row:last-child,
+    .display-row:last-child {
+      border-bottom: 0;
+    }
+    .color-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: var(--green);
+      display: inline-block;
+      margin-right: 8px;
+    }
+    .switch {
+      width: 34px;
+      height: 20px;
+      background: #c9d3ce;
+      border-radius: 999px;
+      display: inline-flex;
+      align-items: center;
+      padding: 2px;
+    }
+    .switch.on { background: var(--green); justify-content: flex-end; }
+    .switch i {
+      width: 16px;
+      height: 16px;
+      background: white;
+      border-radius: 50%;
+      display: block;
+    }
+
+    .modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.18);
+      display: none;
+      place-items: center;
+      padding: 20px;
+      z-index: 30;
+    }
+    .modal.open { display: grid; }
+    .dialog {
+      width: min(640px, 100%);
+      background: white;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      box-shadow: 0 18px 48px rgba(0,0,0,.12);
+      padding: 20px;
+    }
+    .dialog-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .form-grid .wide { grid-column: 1 / -1; }
+
+    @media (max-width: 920px) {
+      .app { grid-template-columns: 1fr; }
+      .sidebar { height: auto; min-height: 76px; padding: 10px 14px; align-items: flex-start; flex-direction: column; gap: 8px; }
+      .brand { width: auto; }
+      .nav { width: 100%; }
+      .main { padding: 138px 16px 40px; }
+      .grid.two, .grid.three, .grid.settings, .workflow-layout, .practice { grid-template-columns: 1fr; }
+      .flow-steps, .rating { grid-template-columns: 1fr; }
+      .page-head { flex-direction: column; }
+      table { min-width: 780px; }
+      .table-scroll { overflow: auto; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="brand">
+        <h1>工作台</h1>
+        <p>阅读优先，按你的流程推进。</p>
+      </div>
+      <nav class="nav" id="nav"></nav>
+    </aside>
+
+    <main class="main">
+      <section class="page active" id="home"></section>
+      <section class="page" id="library"></section>
+      <section class="page" id="workflow"></section>
+      <section class="page" id="cards"></section>
+      <section class="page" id="review"></section>
+      <section class="page" id="settings"></section>
+    </main>
+  </div>
+
+  <div class="modal" id="modal">
+    <div class="dialog">
+      <div class="dialog-head">
+        <h3 id="modalTitle">新增</h3>
+        <button class="btn small" onclick="closeModal()">关闭</button>
+      </div>
+      <div id="modalBody"></div>
+    </div>
+  </div>
+
+  <script>
+    const state = {
+      active: 'home',
+      nav: [
+        ['home', '⌂', '首页', true],
+        ['library', '□', '知识库', true],
+        ['workflow', '⌘', '工作流程', true],
+        ['cards', '▤', '卡片', true],
+        ['review', '▷', '复习', true],
+        ['settings', '⚙', '设置', true]
+      ],
+      fields: {
+        knowledge: [
+          ['标题', '文本', true, true, true],
+          ['内容', '长文本', true, false, false],
+          ['分类', '选择', true, true, true],
+          ['标签', '多选', true, true, false],
+          ['来源', '文本', true, false, false],
+          ['重要程度', '选择', true, true, true],
+          ['状态', '状态', true, true, true],
+          ['备注', '长文本', false, false, false]
+        ],
+        card: [
+          ['问题', '文本', true, true, true],
+          ['答案', '长文本', true, false, false],
+          ['类型', '选择', true, true, true],
+          ['难度', '选择', true, true, false],
+          ['掌握程度', '状态', true, true, true],
+          ['所属流程', '选择', true, true, false]
+        ],
+        workflow: [
+          ['流程名称', '文本', true, true, true],
+          ['分类', '选择', true, true, true],
+          ['阶段', '文本', true, true, true],
+          ['节点', '文本', true, true, true],
+          ['步骤', '文本', true, true, true],
+          ['状态', '状态', true, true, false]
+        ],
+        plan: [
+          ['计划日期', '日期', true, true, true],
+          ['计划来源', '选择', true, true, true],
+          ['卡片数量', '数字', true, true, false],
+          ['预计用时', '数字', true, true, false],
+          ['优先级', '选择', true, true, true],
+          ['是否顺延', '状态', true, true, false]
+        ],
+        record: [
+          ['背诵时间', '日期', true, true, true],
+          ['卡片问题', '文本', true, true, true],
+          ['自评结果', '状态', true, true, true],
+          ['用时', '数字', true, true, false],
+          ['复习轮次', '数字', true, true, false],
+          ['是否薄弱', '状态', true, true, true]
+        ],
+        feedback: [
+          ['今日完成率', '数字', true, true, false],
+          ['总掌握率', '数字', true, true, false],
+          ['连续天数', '数字', true, true, false],
+          ['薄弱卡片数', '数字', true, true, true],
+          ['背诵时长', '数字', true, true, false],
+          ['流程进度', '数字', true, true, true]
+        ]
+      },
+      knowledge: [
+        { title: '边际效用递减定律', category: '考试', tags: ['经济学', '必背'], source: '教材', level: '必背', status: '已制卡' },
+        { title: '用户增长的核心公式', category: '工作', tags: ['产品', '高频'], source: '内部笔记', level: '重要', status: '待制卡' },
+        { title: '现在完成时的用法', category: '语言', tags: ['英语', '易错'], source: '课程', level: '重要', status: '背诵中' },
+        { title: '牛顿第三定律', category: '考试', tags: ['物理', '高考'], source: '教科书', level: '必背', status: '已掌握' }
+      ],
+      cards: [
+        { q: '什么是边际效用递减定律？', a: '在其他条件不变时，消费者连续增加同一种商品消费，新增一单位带来的满足感通常会递减。', type: '问答卡', flow: '考试背诵流程', stage: '每日复习', node: '高频概念', difficulty: '中', mastery: '模糊', weak: 3 },
+        { q: '用户增长公式包含哪些关键变量？', a: '通常关注新增、激活、留存、转化、流失和传播等变量。', type: '清单卡', flow: '产品方法论流程', stage: '卡片制作', node: '公式整理', difficulty: '中', mastery: '记住', weak: 1 },
+        { q: '现在完成时的结构是什么？', a: 'have / has + 过去分词，用于表达过去发生并影响现在的动作或状态。', type: '填空卡', flow: '英语单词流程', stage: '每日复习', node: '语法', difficulty: '低', mastery: '忘记', weak: 4 },
+        { q: '牛顿第三定律的内容是什么？', a: '两个物体之间的作用力和反作用力大小相等、方向相反、作用在不同物体上。', type: '问答卡', flow: '考试背诵流程', stage: '每日复习', node: '高频概念', difficulty: '低', mastery: '很熟', weak: 0 }
+      ],
+      flows: [
+        {
+          name: '考试背诵流程',
+          category: '考试',
+          progress: 68,
+          stages: [
+            { name: '资料整理', nodes: [{ name: '高频概念', steps: ['录入知识点', '标记必背', '检查来源'] }] },
+            { name: '卡片制作', nodes: [{ name: '公式整理', steps: ['制作问答卡', '制作填空卡'] }] },
+            { name: '每日复习', nodes: [{ name: '高频概念', steps: ['加入今日计划', '背诵自评', '薄弱顺延'] }] },
+            { name: '考前冲刺', nodes: [{ name: '薄弱卡', steps: ['集中复习', '二次自测'] }] }
+          ]
+        },
+        { name: '产品方法论流程', category: '工作', progress: 75, stages: [
+          { name: '概念理解', nodes: [{ name: '产品模型', steps: ['整理定义', '制作清单卡'] }] },
+          { name: '案例复盘', nodes: [{ name: '业务场景', steps: ['记录案例', '背诵关键句'] }] }
+        ]},
+        { name: '英语单词流程', category: '语言', progress: 25, stages: [
+          { name: '词汇录入', nodes: [{ name: '高频词汇', steps: ['录入单词', '填写例句'] }] },
+          { name: '每日复习', nodes: [{ name: '易错词', steps: ['听写', '自评'] }] }
+        ]}
+      ],
+      currentCard: 0,
+      doneToday: 0,
+      streak: 12,
+      currentFlow: 0,
+      cardTab: '问答卡',
+      cardFlowFilter: '全部流程',
+      cardCategoryFilter: '全部分类',
+      editingCard: null,
+      settingsTab: 'fields',
+      settingsComponent: 'knowledge',
+      homeModules: {
+        search: true,
+        continue: true,
+        quick: true,
+        due: true,
+        completion: true,
+        mastery: true,
+        flowTable: true,
+        weak: true,
+        weekly: true
+      },
+      optionGroups: {
+        importance: ['普通', '重要', '必背'],
+        mastery: ['忘记', '模糊', '记住', '很熟', '已掌握'],
+        status: ['待制卡', '已制卡', '背诵中', '已掌握']
+      },
+      rules: {
+        intervals: { 忘记: 1, 模糊: 2, 记住: 4, 很熟: 7, 已掌握: 14 },
+        weakCount: 2,
+        overcomeCount: 2,
+        checkinPercent: 80,
+        carryOver: true
+      },
+      density: '阅读优先'
+    };
+
+    function chip(text) {
+      const color = text === '必背' || text === '忘记' ? 'red' : text === '重要' || text === '模糊' ? 'amber' : text === '已掌握' || text === '很熟' || text === '已制卡' ? 'green' : 'blue';
+      return `<span class="chip ${color}">${text}</span>`;
+    }
+
+    function setPage(id) {
+      state.active = id;
+      document.querySelectorAll('.page').forEach(p => p.classList.toggle('active', p.id === id));
+      renderNav();
+    }
+
+    function renderNav() {
+      document.getElementById('nav').innerHTML = state.nav.filter(item => item[3]).map(([id, ico, label]) =>
+        `<button class="${state.active === id ? 'active' : ''}" onclick="setPage('${id}')"><span class="ico">${ico}</span>${label}</button>`
+      ).join('');
+    }
+
+    function head(title, desc, right = '') {
+      return '';
+    }
+
+    function renderHome() {
+      const m = state.homeModules;
+      document.getElementById('home').innerHTML = `
+        <div class="home-fixed">
+          ${m.search ? `<div class="search"><span>⌕</span><input placeholder="搜索知识点、卡片或工作流程" /><span class="muted">⌘ K</span></div>` : `<div></div>`}
+          <div class="home-dashboard">
+            ${m.continue ? `<div class="panel pad">
+              <h3>今日继续</h3>
+              <p>继续未完成的阶段、节点和步骤。</p>
+              <div class="compact-flow">
+                ${state.flows.map(f => `
+                  <div class="compact-flow-row">
+                    <strong>${f.name}</strong>
+                    <div class="progress" style="--w:${f.progress}%"><i></i></div>
+                    <span class="muted">${f.stages.length} 阶段</span>
+                  </div>`).join('')}
+              </div>
+            </div>` : ''}
+            ${m.flowTable ? `<div class="panel table-scroll">
+              <table class="mini-table"><thead><tr><th>流程</th><th>阶段</th><th>节点</th><th>完成率</th><th>薄弱</th></tr></thead>
+              <tbody>
+                <tr><td>考试背诵流程</td><td>每日复习</td><td>高频概念</td><td><div class="progress" style="--w:72%"><i></i></div></td><td>6</td></tr>
+                <tr><td>产品方法论流程</td><td>卡片制作</td><td>公式整理</td><td><div class="progress" style="--w:60%"><i></i></div></td><td>8</td></tr>
+                <tr><td>英语单词流程</td><td>每日复习</td><td>语法</td><td><div class="progress" style="--w:36%"><i></i></div></td><td>12</td></tr>
+              </tbody></table>
+            </div>` : ''}
+            <div class="panel home-metrics">
+              ${m.due ? `<div class="metric"><span>今日待背</span><strong>${state.cards.length * 4} 张</strong></div>` : ''}
+              ${m.completion ? `<div class="metric"><span>今日完成率</span><strong>78%</strong><div class="progress" style="--w:78%"><i></i></div></div>` : ''}
+              ${m.mastery ? `<div class="metric"><span>总掌握率</span><strong>68%</strong><div class="progress" style="--w:68%"><i></i></div></div>` : ''}
+            </div>
+            ${m.quick ? `<div class="panel pad">
+              <h3>快速开始</h3>
+              <div class="toolbar">
+                <button class="btn" onclick="setPage('library')">新增知识点</button>
+                <button class="btn" onclick="setPage('workflow')">配置流程</button>
+                <button class="btn" onclick="setPage('cards')">制作卡片</button>
+                <button class="btn primary" onclick="setPage('review')">开始背诵</button>
+              </div>
+            </div>` : ''}
+            ${m.weekly ? `<div class="panel pad">
+              <h3>本周反馈</h3>
+              <p><strong style="font-size:28px">2.4 小时</strong> <span class="muted">背诵时长</span></p>
+              <p><strong style="font-size:28px">${state.streak} 天</strong> <span class="muted">连续背诵</span></p>
+            </div>` : ''}
+            ${m.weak ? `<div class="panel pad weak-list">
+              <h3>薄弱卡片 Top 5</h3>
+              ${state.cards.slice().sort((a,b)=>b.weak-a.weak).map((c,i)=>`<p>${i+1}. ${c.q}<br><span class="muted">${c.weak} 次未掌握 · ${c.node}</span></p>`).join('')}
+            </div>` : ''}
+          </div>
+        </div>`;
+    }
+
+    function renderLibrary() {
+      document.getElementById('library').innerHTML = `
+        ${head('知识库', '管理自己的知识点、资料来源、分类和标签。字段可在设置里调整。')}
+        <div class="toolbar">
+          <button class="btn primary" onclick="openKnowledgeModal()">新增知识点</button>
+          <button class="btn" onclick="openBatchModal()">批量导入</button>
+          <div class="search" style="max-width:430px"><span>⌕</span><input placeholder="搜索知识点、标签或来源" /></div>
+        </div>
+        <div class="panel table-scroll">
+          <table>
+            <thead><tr><th>知识点</th><th>分类</th><th>标签</th><th>来源</th><th>重要程度</th><th>状态</th><th>下一步</th></tr></thead>
+            <tbody>${state.knowledge.map(k => `<tr>
+              <td><strong>${k.title}</strong></td><td>${k.category}</td>
+              <td>${k.tags.map(chip).join(' ')}</td><td>${k.source}</td><td>${chip(k.level)}</td><td>${chip(k.status)}</td>
+              <td><button class="link" onclick="setPage('cards')">${k.status === '待制卡' ? '制作卡片' : '复习'}</button></td>
+            </tr>`).join('')}</tbody>
+          </table>
+        </div>`;
+    }
+
+    function renderWorkflow() {
+      const flowIndex = state.currentFlow;
+      const f = state.flows[flowIndex];
+      document.getElementById('workflow').innerHTML = `
+        ${head('工作流程', '用户可以创建多个流程，并把每个流程拆成分类、阶段、节点、步骤。')}
+        <div class="workflow-layout">
+          <div class="panel pad">
+            <h3>我的流程</h3>
+            <div class="list-menu">${state.flows.map((x, i) => `<div class="flow-list-item ${i === flowIndex ? 'active' : ''}" onclick="selectFlow(${i})">
+              <input value="${x.name}" onclick="event.stopPropagation()" oninput="updateFlowList(${i},'name',this.value)" title="流程名称">
+              <div class="flow-list-meta">
+                <input value="${x.category}" onclick="event.stopPropagation()" oninput="updateFlowList(${i},'category',this.value)" title="分类">
+                <input value="${x.progress}" onclick="event.stopPropagation()" onchange="updateFlowList(${i},'progress',this.value)" title="进度百分比">
+              </div>
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px">
+                <small class="muted">分类 · 进度%</small>
+                <button class="link" onclick="event.stopPropagation();removeFlow(${i})">删除</button>
+              </div>
+            </div>`).join('')}</div>
+            <button class="btn primary" style="width:100%;margin-top:12px" onclick="addFlow()">新建流程</button>
+          </div>
+          <div class="panel pad">
+            <div style="display:flex;justify-content:space-between;gap:12px;align-items:start">
+              <div>
+                <input class="input" style="font-size:20px;font-weight:700;max-width:360px" value="${f.name}" oninput="updateFlowMeta('name',this.value)">
+                <p>分类：<input class="input" style="display:inline-block;max-width:160px;padding:5px 8px" value="${f.category}" oninput="updateFlowMeta('category',this.value)">。你可以继续添加阶段、节点和步骤。</p>
+              </div>
+              <div class="toolbar"><button class="btn small" onclick="addStage()">新增阶段</button><button class="btn small" onclick="addNode()">新增节点</button><button class="btn small" onclick="addStep()">新增步骤</button></div>
+            </div>
+            <div class="timeline-wrap">
+              <div class="workflow-timeline">
+                ${f.stages.map((s, idx) => {
+                  const firstNode = s.nodes[0] || { name: '新节点', steps: [] };
+                  return `<div class="timeline-step">
+                    <span class="timeline-dot"></span>
+                    <h4>步骤${['一','二','三','四','五','六'][idx] || idx + 1}</h4>
+                    <div class="timeline-edit-row"><strong>阶段</strong><input value="${s.name}" oninput="updateStage(${idx},this.value)"></div>
+                    <div class="timeline-edit-row"><strong>节点</strong><input value="${firstNode.name}" oninput="updateNode(${idx},0,this.value)"></div>
+                    <textarea oninput="updateSteps(${idx},0,this.value)" title="每行一个步骤">${firstNode.steps.map((st, i) => `步骤 ${i + 1}：${st}`).join('\n')}</textarea>
+                    <div class="timeline-meta">
+                      <span class="chip green">${f.category}</span>
+                      <span class="chip">${s.nodes.length} 个节点</span>
+                      <button class="link" onclick="removeStage(${idx})">删除阶段</button>
+                    </div>
+                  </div>`;
+                }).join('')}
+              </div>
+            </div>
+          </div>
+        </div>`;
+    }
+
+    function activeFlow() {
+      return state.flows[state.currentFlow];
+    }
+
+    function selectFlow(index) {
+      state.currentFlow = index;
+      renderWorkflow();
+    }
+
+    function addFlow() {
+      state.flows.push({
+        name: '新建背诵流程',
+        category: '未分类',
+        progress: 0,
+        stages: [
+          { name: '新阶段', nodes: [{ name: '新节点', steps: ['新增步骤'] }] }
+        ]
+      });
+      state.currentFlow = state.flows.length - 1;
+      renderWorkflow();
+      renderHome();
+    }
+
+    function updateFlowMeta(key, value) {
+      activeFlow()[key] = value || (key === 'name' ? '未命名流程' : '未分类');
+      renderHome();
+    }
+
+    function updateFlowList(index, key, value) {
+      if (key === 'progress') {
+        state.flows[index].progress = Math.max(0, Math.min(100, Number(value) || 0));
+      } else {
+        state.flows[index][key] = value || (key === 'name' ? '未命名流程' : '未分类');
+      }
+      renderHome();
+    }
+
+    function removeFlow(index) {
+      if (state.flows.length <= 1) return;
+      state.flows.splice(index, 1);
+      state.currentFlow = Math.max(0, Math.min(state.currentFlow, state.flows.length - 1));
+      renderWorkflow();
+      renderHome();
+    }
+
+    function addStage() {
+      activeFlow().stages.push({ name: '新阶段', nodes: [{ name: '新节点', steps: ['新增步骤'] }] });
+      renderWorkflow();
+      renderHome();
+    }
+
+    function addNode() {
+      const flow = activeFlow();
+      const lastStage = flow.stages[flow.stages.length - 1] || { name: '新阶段', nodes: [] };
+      if (!flow.stages.length) flow.stages.push(lastStage);
+      lastStage.nodes.push({ name: '新节点', steps: ['新增步骤'] });
+      renderWorkflow();
+      renderHome();
+    }
+
+    function addStep() {
+      const flow = activeFlow();
+      if (!flow.stages.length) addStage();
+      const stage = flow.stages[flow.stages.length - 1];
+      if (!stage.nodes.length) stage.nodes.push({ name: '新节点', steps: [] });
+      stage.nodes[0].steps.push('新增步骤');
+      renderWorkflow();
+      renderHome();
+    }
+
+    function updateStage(stageIndex, value) {
+      activeFlow().stages[stageIndex].name = value || '未命名阶段';
+      renderHome();
+    }
+
+    function updateNode(stageIndex, nodeIndex, value) {
+      activeFlow().stages[stageIndex].nodes[nodeIndex].name = value || '未命名节点';
+      renderHome();
+    }
+
+    function updateSteps(stageIndex, nodeIndex, value) {
+      activeFlow().stages[stageIndex].nodes[nodeIndex].steps = value
+        .split('\n')
+        .map(line => line.replace(/^步骤\s*\d+\s*[：:]\s*/, '').trim())
+        .filter(Boolean);
+      renderHome();
+    }
+
+    function removeStage(stageIndex) {
+      const flow = activeFlow();
+      if (flow.stages.length <= 1) return;
+      flow.stages.splice(stageIndex, 1);
+      renderWorkflow();
+      renderHome();
+    }
+
+    function renderCards() {
+      const flowOptions = ['全部流程', ...state.flows.map(f => f.name)];
+      const categoryOptions = ['全部分类', ...Array.from(new Set(state.flows.map(f => f.category)))];
+      const visibleCards = state.cards
+        .map((card, index) => ({ card, index }))
+        .filter(({ card }) => card.type === state.cardTab)
+        .filter(({ card }) => state.cardFlowFilter === '全部流程' || card.flow === state.cardFlowFilter)
+        .filter(({ card }) => {
+          const flow = state.flows.find(f => f.name === card.flow);
+          return state.cardCategoryFilter === '全部分类' || (flow && flow.category === state.cardCategoryFilter);
+        });
+      document.getElementById('cards').innerHTML = `
+        ${head('卡片管理', '从知识点制作问答卡、填空卡、清单卡，并按流程、分类、阶段筛选。')}
+        <div class="tabs">${['问答卡','填空卡','清单卡'].map(t => `<button class="${state.cardTab === t ? 'active' : ''}" onclick="setCardTab('${t}')">${t}</button>`).join('')}</div>
+        <div class="toolbar">
+          <select class="select" style="max-width:180px" onchange="state.cardFlowFilter=this.value;renderCards()">${flowOptions.map(x => `<option ${state.cardFlowFilter === x ? 'selected' : ''}>${x}</option>`).join('')}</select>
+          <select class="select" style="max-width:180px" onchange="state.cardCategoryFilter=this.value;renderCards()">${categoryOptions.map(x => `<option ${state.cardCategoryFilter === x ? 'selected' : ''}>${x}</option>`).join('')}</select>
+          <button class="btn primary" onclick="openCardModal()">新增卡片</button>
+        </div>
+        <div class="panel table-scroll">
+          <table><thead><tr><th>问题</th><th>类型</th><th>所属流程</th><th>阶段</th><th>难度</th><th>掌握</th><th>操作</th></tr></thead>
+          <tbody>${visibleCards.map(({ card: c, index }) => `<tr>
+            <td><input class="input" value="${c.q}" oninput="updateCard(${index},'q',this.value)"></td>
+            <td><select class="select" onchange="updateCard(${index},'type',this.value);setCardTab(this.value)">${['问答卡','填空卡','清单卡'].map(t => `<option ${c.type === t ? 'selected' : ''}>${t}</option>`).join('')}</select></td>
+            <td><select class="select" onchange="updateCard(${index},'flow',this.value)">${state.flows.map(f => `<option ${c.flow === f.name ? 'selected' : ''}>${f.name}</option>`).join('')}</select></td>
+            <td><input class="input" value="${c.stage}" oninput="updateCard(${index},'stage',this.value)"></td>
+            <td><select class="select" onchange="updateCard(${index},'difficulty',this.value)">${['低','中','高'].map(t => `<option ${c.difficulty === t ? 'selected' : ''}>${t}</option>`).join('')}</select></td>
+            <td><select class="select" onchange="updateCard(${index},'mastery',this.value)">${state.optionGroups.mastery.map(t => `<option ${c.mastery === t ? 'selected' : ''}>${t}</option>`).join('')}</select></td>
+            <td><button class="link" onclick="addCardToPlan(${index})">加入计划</button> · <button class="link" onclick="openEditCardModal(${index})">编辑</button></td>
+          </tr>`).join('') || `<tr><td colspan="7" class="muted">当前类型暂无卡片，可点击“新增卡片”创建。</td></tr>`}</tbody></table>
+        </div>`;
+    }
+
+    function setCardTab(type) {
+      state.cardTab = type;
+      renderCards();
+    }
+
+    function updateCard(index, key, value) {
+      state.cards[index][key] = value || '';
+      renderReview();
+      renderHome();
+    }
+
+    function addCardToPlan(index) {
+      state.cards[index].inPlan = true;
+      alert('已加入今日计划');
+    }
+
+    function renderReview() {
+      const c = state.cards[state.currentCard % state.cards.length];
+      document.getElementById('review').innerHTML = `
+        ${head('开始背诵', '专注当前流程、阶段和节点。先回忆，再显示答案，最后自评掌握程度。')}
+        <div class="practice">
+          <div>
+            <div class="panel question-card">
+              <span class="chip green">当前流程：${c.flow} / ${c.stage} / ${c.node}</span>
+              <h3>${c.q}</h3>
+              <button class="btn primary" onclick="showAnswer()">显示答案</button>
+              <div class="answer" id="answer">${c.a}</div>
+            </div>
+            <div class="rating">
+              ${['忘记','模糊','记住','很熟','已掌握'].map(x => `<button class="btn" onclick="rate('${x}')">${x}</button>`).join('')}
+            </div>
+          </div>
+          <div class="panel pad">
+            <h3>今日计划</h3>
+            <p>当前进度：${state.currentCard + 1} / ${state.cards.length * 5}</p>
+            <div class="progress" style="--w:${Math.min(100, (state.currentCard + 1) / (state.cards.length * 5) * 100)}%"><i></i></div>
+            <hr style="border:0;border-top:1px solid var(--line);margin:16px 0">
+            <p><strong>流程步骤</strong></p>
+            <ol class="muted" style="line-height:2">
+              <li>录入知识点</li>
+              <li>制作问答卡</li>
+              <li>加入今日计划</li>
+              <li>背诵自评</li>
+            </ol>
+          </div>
+        </div>`;
+    }
+
+    function renderSettings() {
+      const componentMap = {
+        knowledge: '知识点',
+        card: '背诵卡片',
+        workflow: '工作流程',
+        plan: '复习计划',
+        record: '背诵记录',
+        feedback: '学习反馈'
+      };
+      const rows = state.fields[state.settingsComponent];
+      const componentName = componentMap[state.settingsComponent];
+      const tab = state.settingsTab;
+      const tabButton = (id, label) => `<button class="${tab === id ? 'active' : ''}" onclick="state.settingsTab='${id}';renderSettings()">${label}</button>`;
+      const fieldContent = `
+        <div class="settings-board">
+          <div class="panel pad">
+            <h3>组件</h3>
+            <div class="list-menu">
+              ${Object.entries(componentMap).map(([key,label])=>`<button class="${state.settingsComponent===key?'active':''}" onclick="selectSettingsComponent('${key}')">${label}</button>`).join('')}
+            </div>
+          </div>
+          <div class="grid">
+            <div class="panel pad table-scroll">
+              <div style="display:flex;justify-content:space-between;gap:12px;align-items:center"><h3>${componentName}字段</h3><div class="search" style="max-width:280px"><span>⌕</span><input placeholder="搜索字段"></div></div>
+              <table class="config-table"><thead><tr><th>排序</th><th>显示</th><th>字段名称</th><th>字段类型</th><th>列表显示</th><th>筛选</th><th>操作</th></tr></thead>
+              <tbody>${rows.map((r,i)=>`<tr><td>⋮⋮</td><td><button class="switch ${r[2]?'on':''}" onclick="toggleField(${i},2)"><i></i></button></td><td><input class="input" type="text" value="${r[0]}" oninput="renameField(${i},this.value)"></td><td><select class="select" onchange="setFieldType(${i},this.value)">${['文本','长文本','选择','多选','状态','日期','数字'].map(t=>`<option ${r[1]===t?'selected':''}>${t}</option>`).join('')}</select></td><td><input type="checkbox" ${r[3]?'checked':''} onchange="toggleField(${i},3)"></td><td><input type="checkbox" ${r[4]?'checked':''} onchange="toggleField(${i},4)"></td><td><button class="link" onclick="state.settingsTab='options';renderSettings()">编辑</button></td></tr>`).join('')}</tbody></table>
+            </div>
+            <div class="grid two">
+              <div class="panel pad">
+                <h3>预览：${componentName}列表</h3>
+                <table><thead><tr>${rows.filter(r=>r[3]).slice(0,4).map(r=>`<th>${r[0]}</th>`).join('')}</tr></thead><tbody><tr>${rows.filter(r=>r[3]).slice(0,4).map((r,i)=>`<td>${i===0 ? componentName + '示例' : (r[1]==='状态' ? chip('已启用') : '示例')}</td>`).join('')}</tr><tr>${rows.filter(r=>r[3]).slice(0,4).map((r,i)=>`<td>${i===0 ? '第二条记录' : (r[1]==='状态' ? chip('待处理') : '示例')}</td>`).join('')}</tr></tbody></table>
+              </div>
+              <div class="panel pad">
+                <h3>选项示例：重要程度</h3>
+                <p>${chip('普通')} ${chip('重要')} ${chip('必背')}</p>
+                <button class="btn" onclick="state.settingsTab='options';renderSettings()">编辑选项</button>
+              </div>
+            </div>
+          </div>
+        </div>`;
+      const optionContent = `
+        <div class="option-editor">
+          <div class="panel pad">
+            <h3>选项组</h3>
+            <div class="list-menu">
+              ${['分类','标签','重要程度','难度','掌握程度','知识点状态','卡片类型','计划来源'].map((x,i)=>`<button class="${i===2?'active':''}">${x}<br><small class="muted">${i===2?'3 个选项':'可编辑'}</small></button>`).join('')}
+            </div>
+            <button class="btn primary" style="width:100%;margin-top:12px">新增选项组</button>
+          </div>
+          <div class="grid">
+            <div class="panel pad">
+              <div style="display:flex;justify-content:space-between;align-items:center;gap:12px"><h3>重要程度</h3><button class="btn small" onclick="addOption('importance')">新增选项</button></div>
+              ${state.optionGroups.importance.map((x,i)=>`<div class="option-row"><div><span class="color-dot" style="background:${['#94a3b8','#d97706','#dc2626','#0f766e','#2563eb'][i % 5]}"></span><input class="input" style="display:inline-block;width:220px" value="${x}" oninput="renameOption('importance',${i},this.value)"> <span class="muted">用于知识点和卡片优先级</span></div><div><button class="link" onclick="moveOption('importance',${i},-1)">上移</button> · <button class="link" onclick="removeOption('importance',${i})">删除</button></div></div>`).join('')}
+            </div>
+            <div class="grid two">
+              <div class="panel pad"><h3>关联字段</h3><p>${chip('知识点.重要程度')} ${chip('卡片.重要程度')} ${chip('复习计划.优先级')}</p></div>
+              <div class="panel pad"><h3>预览</h3><p>${state.optionGroups.importance.map(chip).join(' ')}</p><p class="muted">修改名称、颜色或顺序后，所有关联页面同步更新。</p></div>
+            </div>
+          </div>
+        </div>`;
+      const ruleContent = `
+        <div class="grid two">
+          <div class="panel pad">
+            <h3>自评后的复习间隔</h3>
+            ${[
+              ['忘记','明天重新复习，标记薄弱'],
+              ['模糊','缩短间隔，进入重点复习'],
+              ['记住','正常延后复习'],
+              ['很熟','降低复习频率'],
+              ['已掌握','进入长期巩固']
+            ].map(r=>`<div class="rule-row"><div><strong>${r[0]}</strong><br><span class="muted">${r[1]}</span></div><div style="display:flex;align-items:center;gap:8px"><input class="input" style="width:76px" value="${state.rules.intervals[r[0]]}" onchange="updateInterval('${r[0]}',this.value)"><span class="muted">天后</span></div></div>`).join('')}
+          </div>
+          <div class="grid">
+            <div class="panel pad">
+              <h3>薄弱卡判定</h3>
+              <p>连续 <input class="input" style="width:70px;display:inline-block" value="${state.rules.weakCount}" onchange="state.rules.weakCount=Number(this.value)||1"> 次选择“忘记 / 模糊”，自动进入薄弱卡片。</p>
+              <p>连续 <input class="input" style="width:70px;display:inline-block" value="${state.rules.overcomeCount}" onchange="state.rules.overcomeCount=Number(this.value)||1"> 次选择“记住 / 很熟 / 已掌握”，视为攻克薄弱。</p>
+            </div>
+            <div class="panel pad">
+              <h3>打卡规则</h3>
+              <p>今日计划完成率达到 <input class="input" style="width:80px;display:inline-block" value="${state.rules.checkinPercent}" onchange="state.rules.checkinPercent=Number(this.value)||0"> %，计入连续背诵天数。</p>
+              <p><label><input type="checkbox" ${state.rules.carryOver ? 'checked' : ''} onchange="state.rules.carryOver=this.checked"> 未完成卡片自动顺延到明天</label></p>
+            </div>
+          </div>
+        </div>`;
+      const displayContent = `
+        <div class="grid two">
+          <div class="panel pad">
+            <h3>首页模块</h3>
+            ${[
+              ['search','搜索栏'],['continue','今日继续'],['quick','快速开始'],['due','今日待背'],['completion','今日完成率'],['mastery','总掌握率'],['flowTable','流程进度表'],['weak','薄弱卡片 Top 5'],['weekly','本周反馈']
+            ].map(([key,label],i)=>`<div class="display-row"><div><strong>${label}</strong><br><span class="muted">${i < 3 ? '核心模块，建议保留' : '可按个人习惯显示或隐藏'}</span></div><button class="switch ${state.homeModules[key] ? 'on' : ''}" onclick="toggleHomeModule('${key}')"><i></i></button></div>`).join('')}
+          </div>
+          <div class="grid">
+            <div class="panel pad">
+              <h3>导航显示</h3>
+              <p>${state.nav.map((n,i)=>`<label style="display:inline-block;margin:0 12px 10px 0"><input type="checkbox" ${n[3] ? 'checked' : ''} onchange="toggleNav(${i})"> ${n[2]}</label>`).join('')}</p>
+            </div>
+            <div class="panel pad">
+              <h3>布局密度</h3>
+              <select class="select" style="max-width:220px" onchange="state.density=this.value"><option ${state.density==='阅读优先'?'selected':''}>阅读优先</option><option ${state.density==='紧凑列表'?'selected':''}>紧凑列表</option><option ${state.density==='大字号模式'?'selected':''}>大字号模式</option></select>
+              <p class="muted">首页保持一屏展示，其他页面保留滚动和表格阅读空间。</p>
+            </div>
+            <div class="panel pad">
+              <h3>预览说明</h3>
+              <p>关闭模块后，首页会重新分配空间；字段配置仍决定表格里显示哪些列。</p>
+            </div>
+          </div>
+        </div>`;
+      const contentMap = { fields: fieldContent, options: optionContent, rules: ruleContent, display: displayContent };
+      document.getElementById('settings').innerHTML = `
+        ${head('设置', '自定义字段、选项、背诵规则和页面显示。')}
+        <div class="tabs">${tabButton('fields','字段配置')}${tabButton('options','选项配置')}${tabButton('rules','背诵规则')}${tabButton('display','页面显示')}</div>
+        ${contentMap[tab]}
+        <div class="toolbar" style="justify-content:flex-end"><button class="btn" onclick="resetSettings()">恢复默认</button><button class="btn primary" onclick="saveSettings()">保存设置</button></div>`;
+    }
+
+    function addOption(group) {
+      state.optionGroups[group].push('新选项');
+      renderSettings();
+    }
+
+    function renameOption(group, index, value) {
+      state.optionGroups[group][index] = value || '未命名';
+    }
+
+    function removeOption(group, index) {
+      if (state.optionGroups[group].length <= 1) return;
+      state.optionGroups[group].splice(index, 1);
+      renderSettings();
+    }
+
+    function moveOption(group, index, direction) {
+      const next = index + direction;
+      const items = state.optionGroups[group];
+      if (next < 0 || next >= items.length) return;
+      [items[index], items[next]] = [items[next], items[index]];
+      renderSettings();
+    }
+
+    function updateInterval(label, value) {
+      state.rules.intervals[label] = Math.max(1, Number(value) || 1);
+    }
+
+    function toggleField(index, propIndex) {
+      state.fields[state.settingsComponent][index][propIndex] = !state.fields[state.settingsComponent][index][propIndex];
+      renderSettings();
+    }
+
+    function renameField(index, value) {
+      state.fields[state.settingsComponent][index][0] = value || '未命名字段';
+    }
+
+    function setFieldType(index, value) {
+      state.fields[state.settingsComponent][index][1] = value;
+    }
+
+    function selectSettingsComponent(key) {
+      state.settingsComponent = key;
+      renderSettings();
+    }
+
+    function toggleHomeModule(key) {
+      state.homeModules[key] = !state.homeModules[key];
+      renderHome();
+      renderSettings();
+    }
+
+    function toggleNav(index) {
+      state.nav[index][3] = !state.nav[index][3];
+      if (!state.nav.some(n => n[3])) state.nav[index][3] = true;
+      if (!state.nav.find(n => n[0] === state.active && n[3])) setPage('home');
+      renderNav();
+      renderSettings();
+    }
+
+    function saveSettings() {
+      try {
+        localStorage.setItem('recite-workbench-settings', JSON.stringify({
+          fields: state.fields,
+          nav: state.nav,
+          homeModules: state.homeModules,
+          optionGroups: state.optionGroups,
+          rules: state.rules,
+          density: state.density,
+          settingsComponent: state.settingsComponent
+        }));
+      } catch (e) {}
+      alert('设置已保存到本地浏览器。');
+    }
+
+    function resetSettings() {
+      try { localStorage.removeItem('recite-workbench-settings'); } catch (e) {}
+      location.reload();
+    }
+
+    function loadSavedSettings() {
+      try {
+        const saved = JSON.parse(localStorage.getItem('recite-workbench-settings') || 'null');
+        if (!saved) return;
+        if (saved.fields) state.fields = saved.fields;
+        if (saved.nav) state.nav = saved.nav;
+        if (saved.homeModules) state.homeModules = saved.homeModules;
+        if (saved.optionGroups) state.optionGroups = saved.optionGroups;
+        if (saved.rules) state.rules = saved.rules;
+        if (saved.density) state.density = saved.density;
+        if (saved.settingsComponent) state.settingsComponent = saved.settingsComponent;
+      } catch (e) {}
+    }
+
+    function renderAll() {
+      renderNav();
+      renderHome();
+      renderLibrary();
+      renderWorkflow();
+      renderCards();
+      renderReview();
+      renderSettings();
+    }
+
+    function openModal(title, body) {
+      document.getElementById('modalTitle').textContent = title;
+      document.getElementById('modalBody').innerHTML = body;
+      document.getElementById('modal').classList.add('open');
+    }
+    function closeModal() { document.getElementById('modal').classList.remove('open'); }
+
+    function openKnowledgeModal() {
+      openModal('新增知识点', `<div class="form-grid">
+        <label>标题<input class="input" id="kTitle" placeholder="例如：费曼学习法"></label>
+        <label>分类<input class="input" id="kCat" placeholder="考试 / 工作 / 课程"></label>
+        <label class="wide">内容<textarea id="kContent" placeholder="写下你要背诵的知识内容"></textarea></label>
+        <label>标签<input class="input" id="kTags" placeholder="必背, 高频"></label>
+        <label>重要程度<select class="select" id="kLevel"><option>普通</option><option>重要</option><option>必背</option></select></label>
+        <div class="wide toolbar" style="justify-content:flex-end"><button class="btn primary" onclick="addKnowledge()">保存</button></div>
+      </div>`);
+    }
+    function addKnowledge() {
+      const title = document.getElementById('kTitle').value.trim();
+      if (!title) return;
+      state.knowledge.unshift({
+        title,
+        category: document.getElementById('kCat').value || '未分类',
+        tags: (document.getElementById('kTags').value || '新知识').split(',').map(x => x.trim()).filter(Boolean),
+        source: '手动录入',
+        level: document.getElementById('kLevel').value,
+        status: '待制卡'
+      });
+      closeModal(); renderLibrary(); setPage('library');
+    }
+
+    function openBatchModal() {
+      openModal('批量导入知识点', `<p class="muted">每行一个知识点。MVP 会按标题导入，后续可扩展 CSV / Excel 字段映射。</p><textarea id="batchText" placeholder="边际效用递减定律&#10;牛顿第三定律&#10;现在完成时的用法"></textarea><div class="toolbar" style="justify-content:flex-end"><button class="btn primary" onclick="addBatch()">导入</button></div>`);
+    }
+    function addBatch() {
+      const lines = document.getElementById('batchText').value.split('\\n').map(x => x.trim()).filter(Boolean);
+      lines.reverse().forEach(title => state.knowledge.unshift({ title, category: '未分类', tags: ['批量导入'], source: '批量粘贴', level: '普通', status: '待制卡' }));
+      closeModal(); renderLibrary(); setPage('library');
+    }
+
+    function openCardModal() {
+      state.editingCard = null;
+      openModal('新增背诵卡片', `<div class="form-grid">
+        <label class="wide">问题<textarea id="cQ" placeholder="输入要背的问题"></textarea></label>
+        <label class="wide">答案<textarea id="cA" placeholder="输入标准答案或自己的整理"></textarea></label>
+        <label>类型<select class="select" id="cType">${['问答卡','填空卡','清单卡'].map(t => `<option ${state.cardTab === t ? 'selected' : ''}>${t}</option>`).join('')}</select></label>
+        <label>难度<select class="select" id="cDiff"><option>低</option><option>中</option><option>高</option></select></label>
+        <div class="wide toolbar" style="justify-content:flex-end"><button class="btn primary" onclick="addCard()">保存</button></div>
+      </div>`);
+    }
+    function openEditCardModal(index) {
+      state.editingCard = index;
+      const c = state.cards[index];
+      openModal('编辑背诵卡片', `<div class="form-grid">
+        <label class="wide">问题<textarea id="cQ">${c.q}</textarea></label>
+        <label class="wide">答案<textarea id="cA">${c.a}</textarea></label>
+        <label>类型<select class="select" id="cType">${['问答卡','填空卡','清单卡'].map(t => `<option ${c.type === t ? 'selected' : ''}>${t}</option>`).join('')}</select></label>
+        <label>难度<select class="select" id="cDiff">${['低','中','高'].map(t => `<option ${c.difficulty === t ? 'selected' : ''}>${t}</option>`).join('')}</select></label>
+        <label>所属流程<select class="select" id="cFlow">${state.flows.map(f => `<option ${c.flow === f.name ? 'selected' : ''}>${f.name}</option>`).join('')}</select></label>
+        <label>阶段<input class="input" id="cStage" value="${c.stage}"></label>
+        <label>节点<input class="input" id="cNode" value="${c.node}"></label>
+        <label>掌握程度<select class="select" id="cMastery">${state.optionGroups.mastery.map(t => `<option ${c.mastery === t ? 'selected' : ''}>${t}</option>`).join('')}</select></label>
+        <div class="wide toolbar" style="justify-content:flex-end"><button class="btn" onclick="deleteCard(${index})">删除卡片</button><button class="btn primary" onclick="saveEditedCard()">保存修改</button></div>
+      </div>`);
+    }
+    function addCard() {
+      const q = document.getElementById('cQ').value.trim();
+      if (!q) return;
+      const selectedType = document.getElementById('cType').value;
+      state.cards.unshift({ q, a: document.getElementById('cA').value, type: selectedType, flow: state.flows[0]?.name || '默认流程', stage: '每日复习', node: '自定义节点', difficulty: document.getElementById('cDiff').value, mastery: '生疏', weak: 0 });
+      state.cardTab = selectedType;
+      closeModal(); renderCards(); setPage('cards');
+    }
+    function saveEditedCard() {
+      const index = state.editingCard;
+      if (index === null || !state.cards[index]) return;
+      const q = document.getElementById('cQ').value.trim();
+      if (!q) return;
+      Object.assign(state.cards[index], {
+        q,
+        a: document.getElementById('cA').value,
+        type: document.getElementById('cType').value,
+        flow: document.getElementById('cFlow').value,
+        stage: document.getElementById('cStage').value,
+        node: document.getElementById('cNode').value,
+        difficulty: document.getElementById('cDiff').value,
+        mastery: document.getElementById('cMastery').value
+      });
+      state.cardTab = state.cards[index].type;
+      closeModal();
+      renderCards();
+      renderReview();
+      renderHome();
+    }
+    function deleteCard(index) {
+      if (state.cards.length <= 1) return;
+      state.cards.splice(index, 1);
+      state.currentCard = Math.min(state.currentCard, state.cards.length - 1);
+      closeModal();
+      renderCards();
+      renderReview();
+      renderHome();
+    }
+
+    function showAnswer() { document.getElementById('answer').style.display = 'block'; }
+    function rate(value) {
+      state.cards[state.currentCard % state.cards.length].mastery = value;
+      state.currentCard += 1;
+      state.doneToday += 1;
+      renderHome();
+      renderReview();
+      renderCards();
+    }
+
+    loadSavedSettings();
+    renderAll();
+  </script>
+</body>
+</html>
+
